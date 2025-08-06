@@ -2,6 +2,7 @@ import pytest
 import asyncio
 from httpx import AsyncClient
 from unittest.mock import patch, Mock
+import pytest_asyncio
 
 from src.web.app import app, get_db
 from src.storage.models import Article, Source
@@ -11,7 +12,7 @@ from datetime import datetime
 def mock_db():
     return Mock()
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def client(mock_db):
     from httpx import ASGITransport
     

@@ -180,7 +180,3 @@ uvicorn src.web.app:app --reload --host 127.0.0.1 --port 8000
 4. Add tests for new functionality
 5. Run the test suite and ensure all tests pass
 6. Submit a pull request
-
-## License
-
-This project is for educational and personal use. Please respect the robots.txt and terms of service of the news sources being scraped.
