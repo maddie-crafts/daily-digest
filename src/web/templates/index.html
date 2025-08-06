@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Daily Digest{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>{{ title }}</h2>
+    <button class="btn" onclick="triggerScraping()">Refresh News</button>
+</div>
+
+{% if articles %}
+    {% for article in articles %}
+    <div class="article-card">
+        <h3 class="article-title">
+            <a href="/article/{{ article.id }}">{{ article.title }}</a>
+        </h3>
+        
+        <div class="article-meta">
+            <span><strong>Source:</strong> {{ article.source }}</span>
+            {% if article.published_date %}
+            <span><strong>Published:</strong> {{ article.published_date.strftime('%Y-%m-%d %H:%M') }}</span>
+            {% endif %}
+            {% if article.sentiment_label %}
+            <span class="sentiment {{ article.sentiment_label }}">{{ article.sentiment_label.title() }}</span>
+            {% endif %}
+        </div>
+        
+        {% if article.summary %}
+        <p class="article-summary">{{ article.summary }}</p>
+        {% endif %}
+        
+        {% if article.keywords %}
+        <div style="margin-top: 1rem;">
+            <strong>Keywords:</strong> {{ article.keywords }}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="article-card">
+        <h3>No articles found</h3>
+        <p>Click "Refresh News" to fetch the latest articles from news sources.</p>
+    </div>
+{% endif %}
+
+<script>
+async function triggerScraping() {
+    const button = document.querySelector('button');
+    button.disabled = true;
+    button.textContent = 'Scraping...';
+    
+    try {
+        const response = await fetch('/api/scrape', { method: 'POST' });
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert(`Scraping completed! Processed ${result.processed_articles} articles.`);
+            location.reload();
+        } else {
+            alert(`Scraping failed: ${result.detail}`);
+        }
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Refresh News';
+    }
+}
+</script>
+{% endblock %}

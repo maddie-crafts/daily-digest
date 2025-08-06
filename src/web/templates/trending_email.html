@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Digest - Trending Topics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0084ff, #6c5ce7, #fd79a8);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .intro {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .trending-topic {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid #6c5ce7;
+        }
+        
+        .topic-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .topic-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            text-transform: capitalize;
+        }
+        
+        .topic-stats {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .stat {
+            background: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .stat.frequency {
+            color: #0084ff;
+            border: 1px solid #0084ff;
+        }
+        
+        .stat.articles {
+            color: #00b894;
+            border: 1px solid #00b894;
+        }
+        
+        .stat.sentiment-positive {
+            color: #00b894;
+            background: #d4f7ed;
+        }
+        
+        .stat.sentiment-negative {
+            color: #e84393;
+            background: #fce4ec;
+        }
+        
+        .stat.sentiment-neutral {
+            color: #fdcb6e;
+            background: #fff8e1;
+        }
+        
+        .topic-articles {
+            margin-top: 15px;
+        }
+        
+        .topic-articles h4 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .article-item {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 3px solid #e9ecef;
+        }
+        
+        .article-title {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .article-source {
+            font-size: 12px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .no-trends {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .no-trends h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 25px 20px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .footer a {
+            color: #6c5ce7;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .view-more {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #6c5ce7, #0084ff);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                border-radius: 0;
+                margin: 0;
+            }
+            
+            .topic-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .topic-stats {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🔥 Trending Topics</h1>
+            <div class="subtitle">What's buzzing in the news right now</div>
+        </div>
+        
+        <div class="content">
+            {% if trending_data.has_trends %}
+                <div class="intro">
+                    <strong>{{ trending_data.total_topics }}</strong> trending topics detected in the last <strong>{{ trending_data.time_period }}</strong>
+                </div>
+                
+                {% for topic in trending_data.topics %}
+                <div class="trending-topic">
+                    <div class="topic-header">
+                        <div class="topic-title">{{ topic.keyword }}</div>
+                        <div class="topic-stats">
+                            <span class="stat frequency">{{ topic.frequency }} mentions</span>
+                            <span class="stat articles">{{ topic.articles_count }} articles</span>
+                            <span class="stat sentiment-{{ topic.sentiment_label.lower() }}">{{ topic.sentiment_label }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="topic-articles">
+                        <h4>Recent Articles</h4>
+                        {% for article in topic.top_articles %}
+                        <div class="article-item">
+                            <div class="article-title">{{ article.title }}</div>
+                            <div class="article-source">{{ article.source }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="view-more">
+                    <a href="{{ base_url }}/analytics" class="btn">View Full Analytics</a>
+                </div>
+            {% else %}
+                <div class="no-trends">
+                    <h3>No Major Trends Today</h3>
+                    <p>{{ trending_data.message }}</p>
+                    <p style="margin-top: 20px;">
+                        <a href="{{ base_url }}/" class="btn">Browse All Articles</a>
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent by <strong>Daily Digest</strong></p>
+            <p>
+                <a href="{{ base_url }}/unsubscribe">Unsubscribe</a> | 
+                <a href="{{ base_url }}/analytics">View Online</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 12px; color: #999;">
+                © 2025 Daily Digest. Powered by AI and curated for you.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

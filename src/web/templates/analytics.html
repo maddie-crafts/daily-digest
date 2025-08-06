@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - News Aggregator{% endblock %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+    <div class="article-card">
+        <h3 style="margin-bottom: 1rem;">Overview</h3>
+        <p><strong>Total Articles:</strong> {{ total_articles }}</p>
+    </div>
+    
+    <div class="article-card">
+        <h3 style="margin-bottom: 1rem;">Sentiment Distribution</h3>
+        {% if sentiment_distribution %}
+            {% for label, count in sentiment_distribution.items() %}
+            <div style="margin-bottom: 0.5rem;">
+                <span class="sentiment {{ label }}">{{ label.title() }}</span>
+                <span style="margin-left: 1rem;">{{ count }} articles</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No sentiment analysis data available.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if trending_keywords %}
+<div class="article-card">
+    <h3 style="margin-bottom: 1rem;">Trending Keywords (Last 7 Days)</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+        {% for keyword_data in trending_keywords %}
+        <div style="padding: 0.5rem; background: #f8f9fa; border-radius: 6px;">
+            <strong>{{ keyword_data.keyword }}</strong>
+            <span style="color: #666; margin-left: 0.5rem;">({{ keyword_data.frequency }})</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="article-card">
+    <h3 style="margin-bottom: 1rem;">Actions</h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+        <button class="btn" onclick="triggerScraping()">🔄 Refresh All Sources</button>
+        <button class="btn" onclick="sendTrendingEmail()" id="email-btn">📧 Send Trending Email</button>
+        <button class="btn" onclick="sendTestEmail()" id="test-email-btn">🧪 Send Test Email</button>
+    </div>
+    
+    <h4 style="margin-bottom: 1rem; color: var(--vivid-purple);">📊 Export Data</h4>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <button class="btn" onclick="exportArticles()">📄 Export Articles CSV</button>
+        <button class="btn" onclick="exportAnalytics()">📈 Export Analytics CSV</button>
+        <button class="btn" onclick="exportTrending()">🔥 Export Trending CSV</button>
+        <button class="btn" onclick="showExportOptions()" id="advanced-export-btn">⚙️ Advanced Export</button>
+    </div>
+    
+    <div id="export-options" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 2px solid var(--electric-blue);">
+        <h5 style="margin-bottom: 1rem;">Advanced Export Options</h5>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+                <label for="date-from" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">From Date:</label>
+                <input type="date" id="date-from" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div>
+                <label for="date-to" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">To Date:</label>
+                <input type="date" id="date-to" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div>
+                <label for="source-filter" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Source Filter:</label>
+                <select id="source-filter" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="">All Sources</option>
+                    <option value="BBC News">BBC News</option>
+                    <option value="Guardian">Guardian</option>
+                    <option value="NPR">NPR</option>
+                    <option value="AP News">AP News</option>
+                    <option value="TechCrunch">TechCrunch</option>
+                    <option value="Ars Technica">Ars Technica</option>
+                </select>
+            </div>
+            <div>
+                <label for="sentiment-filter" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Sentiment Filter:</label>
+                <select id="sentiment-filter" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="">All Sentiments</option>
+                    <option value="positive">Positive</option>
+                    <option value="negative">Negative</option>
+                    <option value="neutral">Neutral</option>
+                </select>
+            </div>
+            <div>
+                <label for="max-records" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Max Records:</label>
+                <input type="number" id="max-records" min="1" max="10000" placeholder="Leave empty for all" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div style="display: flex; align-items: end;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="include-content" style="transform: scale(1.2);">
+                    <span style="font-weight: bold;">Include Full Content</span>
+                </label>
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button class="btn" onclick="exportArticlesAdvanced()" style="background: var(--rainbow-gradient);">📄 Export Articles (Advanced)</button>
+            <button class="btn" onclick="hideExportOptions()" style="background: #6c757d;">❌ Cancel</button>
+        </div>
+    </div>
+    
+    <div id="email-status" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; display: none;"></div>
+</div>
+
+<script>
+async function triggerScraping() {
+    const button = document.querySelector('button');
+    button.disabled = true;
+    button.textContent = 'Scraping...';
+    
+    try {
+        const response = await fetch('/api/scrape', { method: 'POST' });
+        const result = await response.json();
+        
+        if (response.ok) {
+            showStatus(`Scraping completed! Processed ${result.processed_articles} articles.`, 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showStatus(`Scraping failed: ${result.detail}`, 'error');
+        }
+    } catch (error) {
+        showStatus(`Error: ${error.message}`, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = '🔄 Refresh All Sources';
+    }
+}
+
+async function sendTrendingEmail() {
+    const button = document.getElementById('email-btn');
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    
+    try {
+        const response = await fetch('/api/email/send-trending', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            showStatus(`✅ Trending topics email sent to ${result.sent_count} recipients!`, 'success');
+        } else {
+            showStatus(`❌ Failed to send email: ${result.message}`, 'error');
+        }
+    } catch (error) {
+        showStatus(`❌ Error: ${error.message}`, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = '📧 Send Trending Email';
+    }
+}
+
+async function sendTestEmail() {
+    const testEmail = prompt('Enter email address for test:', 'albu.madalina85@gmail.com');
+    if (!testEmail) return;
+    
+    const button = document.getElementById('test-email-btn');
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    
+    try {
+        const response = await fetch(`/api/email/test?test_email=${encodeURIComponent(testEmail)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            showStatus(`✅ Test email sent to ${testEmail}!`, 'success');
+        } else {
+            showStatus(`❌ Failed to send test email: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        showStatus(`❌ Error: ${error.message}`, 'error');
+    } finally {
+        button.disabled = false;
+        button.textContent = '🧪 Send Test Email';
+    }
+}
+
+function showStatus(message, type) {
+    const statusDiv = document.getElementById('email-status');
+    statusDiv.style.display = 'block';
+    statusDiv.textContent = message;
+    
+    if (type === 'success') {
+        statusDiv.style.background = '#d4edda';
+        statusDiv.style.color = '#155724';
+        statusDiv.style.border = '1px solid #c3e6cb';
+    } else {
+        statusDiv.style.background = '#f8d7da';
+        statusDiv.style.color = '#721c24';
+        statusDiv.style.border = '1px solid #f5c6cb';
+    }
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 5000);
+}
+
+// Export functions
+async function exportArticles() {
+    try {
+        showStatus('🔄 Preparing articles export...', 'success');
+        const response = await fetch('/api/export/articles');
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            downloadFile(blob, 'daily_digest_articles.csv');
+            showStatus('✅ Articles exported successfully!', 'success');
+        } else {
+            showStatus('❌ Failed to export articles', 'error');
+        }
+    } catch (error) {
+        showStatus(`❌ Export error: ${error.message}`, 'error');
+    }
+}
+
+async function exportAnalytics() {
+    try {
+        showStatus('🔄 Preparing analytics export...', 'success');
+        const response = await fetch('/api/export/analytics?days_back=30');
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            downloadFile(blob, 'daily_digest_analytics.csv');
+            showStatus('✅ Analytics exported successfully!', 'success');
+        } else {
+            showStatus('❌ Failed to export analytics', 'error');
+        }
+    } catch (error) {
+        showStatus(`❌ Export error: ${error.message}`, 'error');
+    }
+}
+
+async function exportTrending() {
+    try {
+        showStatus('🔄 Preparing trending topics export...', 'success');
+        const response = await fetch('/api/export/trending?hours_back=24');
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            downloadFile(blob, 'daily_digest_trending.csv');
+            showStatus('✅ Trending topics exported successfully!', 'success');
+        } else {
+            showStatus('❌ Failed to export trending topics', 'error');
+        }
+    } catch (error) {
+        showStatus(`❌ Export error: ${error.message}`, 'error');
+    }
+}
+
+function showExportOptions() {
+    const optionsDiv = document.getElementById('export-options');
+    const button = document.getElementById('advanced-export-btn');
+    
+    optionsDiv.style.display = 'block';
+    button.textContent = '⚙️ Advanced Export (Opened)';
+    button.disabled = true;
+    
+    // Animate the options panel
+    optionsDiv.style.opacity = '0';
+    optionsDiv.style.transform = 'translateY(-10px)';
+    setTimeout(() => {
+        optionsDiv.style.transition = 'all 0.3s ease';
+        optionsDiv.style.opacity = '1';
+        optionsDiv.style.transform = 'translateY(0)';
+    }, 10);
+}
+
+function hideExportOptions() {
+    const optionsDiv = document.getElementById('export-options');
+    const button = document.getElementById('advanced-export-btn');
+    
+    optionsDiv.style.display = 'none';
+    button.textContent = '⚙️ Advanced Export';
+    button.disabled = false;
+}
+
+async function exportArticlesAdvanced() {
+    try {
+        // Get filter values
+        const dateFrom = document.getElementById('date-from').value;
+        const dateTo = document.getElementById('date-to').value;
+        const sourceFilter = document.getElementById('source-filter').value;
+        const sentimentFilter = document.getElementById('sentiment-filter').value;
+        const maxRecords = document.getElementById('max-records').value;
+        const includeContent = document.getElementById('include-content').checked;
+        
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+        if (sourceFilter) params.append('source_filter', sourceFilter);
+        if (sentimentFilter) params.append('sentiment_filter', sentimentFilter);
+        if (maxRecords) params.append('max_records', maxRecords);
+        params.append('include_content', includeContent);
+        
+        showStatus('🔄 Preparing advanced export...', 'success');
+        
+        const response = await fetch(`/api/export/articles?${params.toString()}`);
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            downloadFile(blob, 'daily_digest_articles_filtered.csv');
+            showStatus('✅ Advanced export completed successfully!', 'success');
+            hideExportOptions();
+        } else {
+            const error = await response.json();
+            showStatus(`❌ Export failed: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showStatus(`❌ Export error: ${error.message}`, 'error');
+    }
+}
+
+function downloadFile(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// Check email service status on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/api/email/status');
+        const status = await response.json();
+        
+        if (!status.enabled) {
+            const emailBtn = document.getElementById('email-btn');
+            const testBtn = document.getElementById('test-email-btn');
+            
+            emailBtn.disabled = true;
+            emailBtn.textContent = '📧 Email Not Configured';
+            testBtn.disabled = true;
+            testBtn.textContent = '🧪 Email Not Configured';
+            
+            showStatus('⚠️ Email service is not configured. Check your config.yaml settings.', 'error');
+        } else {
+            showStatus(`✅ Email service ready! ${status.subscribers_count} subscribers configured.`, 'success');
+        }
+        
+        // Load export stats
+        try {
+            const exportResponse = await fetch('/api/export/stats');
+            const exportStats = await exportResponse.json();
+            console.log('Export stats:', exportStats);
+        } catch (exportError) {
+            console.warn('Could not load export stats:', exportError);
+        }
+        
+    } catch (error) {
+        console.error('Failed to check email status:', error);
+    }
+});
+</script>
+{% endblock %}

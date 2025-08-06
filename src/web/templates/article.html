@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - Daily Digest{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="/" class="btn">← Back to Home</a>
+</div>
+
+<article class="article-card">
+    <h1 style="font-size: 2rem; margin-bottom: 1rem; color: #2c3e50;">{{ article.title }}</h1>
+    
+    <div class="article-meta" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+        <span><strong>Source:</strong> {{ article.source }}</span>
+        {% if article.author %}
+        <span><strong>Author:</strong> {{ article.author }}</span>
+        {% endif %}
+        {% if article.published_date %}
+        <span><strong>Published:</strong> {{ article.published_date.strftime('%Y-%m-%d %H:%M') }}</span>
+        {% endif %}
+        {% if article.sentiment_label %}
+        <span class="sentiment {{ article.sentiment_label }}">{{ article.sentiment_label.title() }}</span>
+        {% endif %}
+    </div>
+    
+    {% if article.summary %}
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 0.5rem; color: #495057;">Summary</h3>
+        <p>{{ article.summary }}</p>
+    </div>
+    {% endif %}
+    
+    <div style="font-size: 1.1rem; line-height: 1.8; color: #333;">
+        {{ article.content | replace('\n', '<br>') | safe }}
+    </div>
+    
+    {% if article.keywords %}
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+        <strong>Keywords:</strong> {{ article.keywords }}
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+        <a href="{{ article.url }}" target="_blank" class="btn">Read Original Article</a>
+    </div>
+</article>
+{% endblock %}

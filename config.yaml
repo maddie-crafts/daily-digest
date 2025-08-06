@@ -1,0 +1,111 @@
+sources:
+  - name: "BBC News"
+    base_url: "https://www.bbc.com/news"
+    selectors:
+      article_links: "a[data-testid='internal-link']"
+      title: "h1"
+      content: "[data-component='text-block'] p, .story-body p"
+      date: "time"
+    rate_limit: 2
+    max_articles: 15
+
+  - name: "Guardian"
+    base_url: "https://www.theguardian.com/international"
+    selectors:
+      article_links: "a[data-link-name='article']"
+      title: "h1"
+      content: ".content__article-body p"
+      date: "time"
+    rate_limit: 2
+    max_articles: 15
+
+  - name: "NPR"
+    base_url: "https://www.npr.org/sections/news/"
+    selectors:
+      article_links: "h2 a, h3 a"
+      title: "h1"
+      content: "#storytext p, .storytext p"
+      date: ".dateblock, time"
+    rate_limit: 2
+    max_articles: 10
+
+  - name: "AP News"
+    base_url: "https://apnews.com/"
+    selectors:
+      article_links: "h2 a, h3 a"
+      title: "h1"
+      content: ".RichTextStoryBody p, .Article p"
+      date: "time"
+    rate_limit: 2
+    max_articles: 10
+
+  # Tech Sources  
+  - name: "TechCrunch"
+    base_url: "https://techcrunch.com/"
+    selectors:
+      article_links: "h3 a"
+      title: "h1"
+      content: ".article-content p, .entry-content p"
+      date: "time"
+    rate_limit: 2
+    max_articles: 15
+
+  - name: "Ars Technica"
+    base_url: "https://arstechnica.com/"
+    selectors:
+      article_links: "h2 a, h4 a"
+      title: "h1"
+      content: ".post-content p, .article-content p"
+      date: "time"
+    rate_limit: 2
+    max_articles: 12
+
+scraping:
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  timeout: 15
+  max_articles_per_source: 50
+  delay_between_requests: 2
+  retry_attempts: 3
+
+processing:
+  min_content_length: 100
+  sentiment_threshold: 0.1
+  summary_sentences: 3
+  max_keywords: 10
+  duplicate_threshold: 0.8
+
+database:
+  path: "data/daily-digest.db"
+  retention_days: 30
+
+scheduling:
+  scrape_interval_hours: 4
+  cleanup_interval_hours: 24
+
+web:
+  host: "127.0.0.1"
+  port: 8000
+  reload: true
+  articles_per_page: 20
+
+email:
+  # SMTP Configuration
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  username: "${EMAIL_USERNAME}"
+  password: "${EMAIL_PASSWORD}"
+  from_email: "${EMAIL_FROM}"
+  from_name: "Daily Digest"
+  use_tls: true
+  
+  # Notification Settings
+  enabled: true  # Enable email notifications
+  trending_topics_enabled: true
+  send_time_hour: 9  # Hour to send daily digest (24-hour format)
+  send_time_minute: 0
+  hours_back_for_trends: 24  # How many hours back to analyze for trends
+  
+  # Default Recipients
+  default_recipients:
+    - email: "${EMAIL_RECIPIENT}"
+      name: "Maddie Albu"

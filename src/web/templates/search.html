@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Daily Digest{% endblock %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+<form method="GET" class="search-form">
+    <input type="text" name="q" value="{{ query or '' }}" placeholder="Search articles..." class="search-input" required>
+    <button type="submit" class="btn" style="margin-top: 1rem;">Search</button>
+</form>
+
+{% if query %}
+    <p style="margin-bottom: 2rem; color: #666;">
+        Found {{ articles|length }} articles for "{{ query }}"
+    </p>
+{% endif %}
+
+{% if articles %}
+    {% for article in articles %}
+    <div class="article-card">
+        <h3 class="article-title">
+            <a href="/article/{{ article.id }}">{{ article.title }}</a>
+        </h3>
+        
+        <div class="article-meta">
+            <span><strong>Source:</strong> {{ article.source }}</span>
+            {% if article.published_date %}
+            <span><strong>Published:</strong> {{ article.published_date.strftime('%Y-%m-%d %H:%M') }}</span>
+            {% endif %}
+            {% if article.sentiment_label %}
+            <span class="sentiment {{ article.sentiment_label }}">{{ article.sentiment_label.title() }}</span>
+            {% endif %}
+        </div>
+        
+        {% if article.summary %}
+        <p class="article-summary">{{ article.summary }}</p>
+        {% endif %}
+        
+        {% if article.keywords %}
+        <div style="margin-top: 1rem;">
+            <strong>Keywords:</strong> {{ article.keywords }}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% elif query %}
+    <div class="article-card">
+        <h3>No articles found</h3>
+        <p>Try searching with different keywords or check back later for more articles.</p>
+    </div>
+{% endif %}
+{% endblock %}
